@@ -26,16 +26,22 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "SSD1331.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef struct {
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+}ColorTypedef;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define OP_COMMAND 				0U
+#define OP_DATA						1U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,6 +58,123 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void write_cmd(uint8_t data) {
+	HAL_GPIO_WritePin(DC_GPIO_Port, DC_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET);
+	
+	HAL_SPI_Transmit_IT(&hspi1, &data, 1);
+	
+	HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET);
+}
+
+void DSP_Init() {
+	HAL_GPIO_WritePin(RES_GPIO_Port, RES_Pin, GPIO_PIN_RESET);
+	HAL_Delay(1);	
+	HAL_GPIO_WritePin(RES_GPIO_Port, RES_Pin, GPIO_PIN_SET);
+/*	
+	write_cmd(0xA4);
+	write_cmd(0xAF);
+	write_cmd(0xA1);
+	write_cmd(0x00);
+	write_cmd(0xA0);
+	write_cmd(0x7A);
+	*/
+	SSD1331_init();
+}
+
+void drawLine(uint8_t c1, uint8_t r1, uint8_t c2, uint8_t r2, ColorTypedef color) {
+	write_cmd(0x21);
+	write_cmd(c1);
+	write_cmd(r1);
+	write_cmd(c2);
+	write_cmd(r2);
+	write_cmd(color.red);
+	write_cmd(color.green);
+	write_cmd(color.green);
+}
+
+void drawFrame(uint8_t c1, uint8_t r1, uint8_t c2, uint8_t r2, ColorTypedef border, ColorTypedef fill) {
+	write_cmd(0x26);
+	write_cmd(0x01);
+	write_cmd(0x22);
+	write_cmd(c1);
+	write_cmd(r1);
+	write_cmd(c2);
+	write_cmd(r2);
+	write_cmd(border.red);
+	write_cmd(border.green);
+	write_cmd(border.blue);
+	write_cmd(fill.red);
+	write_cmd(fill.green);
+	write_cmd(fill.blue);
+}
+
+void clear(void) {
+	ColorTypedef black = {0, 0, 0};
+	drawFrame(0,0,95,63, black, black);
+  HAL_Delay(1);
+}
+
+void wait_and_clear(void) {
+  HAL_Delay(1000);
+	clear();  
+}
+
+void drawMyName() {
+	ColorTypedef blue = {0,50,0};
+	
+	// V
+	drawLine(2, 2, 6, 2, blue);
+	drawLine(2, 2, 10, 20, blue);
+	drawLine(10, 20, 14, 20, blue);
+	drawLine(22, 2, 14, 20, blue);
+	drawLine(18, 2, 22, 2, blue);
+	drawLine(6, 2, 12, 16, blue);
+	drawLine(12, 16, 18, 2, blue);
+	
+	
+	// I
+	drawLine(26, 2, 30, 2, blue);
+	drawLine(26, 2, 26, 20, blue);
+	drawLine(26, 20, 30, 20, blue);
+	drawLine(30, 2, 30, 20, blue);
+	
+	// T
+	drawLine(34, 2, 34, 6, blue);
+	drawLine(34, 2, 54, 2, blue);
+	drawLine(54, 2, 54, 6, blue);
+	drawLine(42, 20, 46, 20, blue);
+	drawLine(34, 6, 42, 6, blue);
+	drawLine(46, 6, 54, 6, blue);
+	drawLine(42, 6, 42, 20, blue);
+	drawLine(46, 6, 46, 20, blue);
+	
+	// O
+	drawLine(58, 2, 58, 20, blue);
+	drawLine(62, 6, 62, 16, blue);
+	drawLine(62, 6, 66, 6, blue);
+	drawLine(66, 6, 66, 16, blue);
+	drawLine(62, 16, 66, 16, blue);
+	drawLine(70, 2, 70, 20, blue);
+	drawLine(58, 2, 70, 2, blue);
+	drawLine(58, 20, 70, 20, blue);
+	
+	// R
+	drawLine(74, 2, 94, 2, blue);
+	drawLine(74, 2, 74, 20, blue);
+	drawLine(94, 2, 94, 14, blue);
+	drawLine(74, 20, 78, 20, blue);
+	drawLine(78, 20, 78, 14, blue);
+	drawLine(90, 20, 94, 20, blue);
+	drawLine(78, 14, 82, 14, blue);
+	drawLine(90, 20, 82, 14, blue);
+	drawLine(94, 20, 88, 14, blue);
+	drawLine(88, 14, 94, 14, blue);
+	drawLine(78, 6, 90, 6, blue);
+	drawLine(78, 6, 78, 10, blue);
+	drawLine(90, 6, 90, 10, blue);
+	drawLine(78, 10, 90, 10, blue);
+}
 
 /* USER CODE END PFP */
 
@@ -91,7 +214,17 @@ int main(void)
   MX_SPI1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+	DSP_Init();
+	clear();
 
+/*
+	ColorTypedef red = {50,0,0};
+	ColorTypedef blue = {0,50,0};
+	drawFrame(0,0,96,64, red, blue);
+	wait_and_clear();	
+*/
+
+	drawMyName();
   /* USER CODE END 2 */
 
   /* Infinite loop */
